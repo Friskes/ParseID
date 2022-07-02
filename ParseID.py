@@ -3,37 +3,6 @@ from bs4 import BeautifulSoup
 import json
 import openpyxl
 
-'''
-<script type="text/javascript">
-            var _ = g_items; _[47512]={"quality":4,"icon":"inv_jewelry_ring_44","name_ruru":"Исповедь грешника"};
-            var _ = g_classes; _[5]={"name_ruru":"Жрец"};
-            var _ = g_spells; _[47540]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[53005]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[53006]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[53007]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[54518]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[47666]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[47750]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[52983]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[52984]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[52985]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[52998]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[52999]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[53000]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[54520]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[66097]={"icon":"spell_nature_starfall","name_ruru":"Исповедь"};
-                              _[66098]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[68029]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[68030]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[68031]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[69905]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[69906]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[71137]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[71138]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-                              _[71139]={"icon":"spell_holy_penance","name_ruru":"Исповедь"};
-        </script>
-'''
-
 def make_xlsx_file(spell_dict, key):
     # print(spell_dict)
 
@@ -63,7 +32,7 @@ def make_xlsx_file(spell_dict, key):
 
 x_list = []
 
-def make_dict_with_id(script_text, key):
+def make_dict_with_id(script_text, key, objectName):
     item_key = 'var _ = g_items'
     class_key = 'var _ = g_classes'
     spell_key = 'var _ = g_spells'
@@ -78,18 +47,37 @@ def make_dict_with_id(script_text, key):
     text.remove(text[0])
     text.remove(text[-1])
 
-    text_0 = text[0]
+    i = 0
+    def name_match_check(text):
+        nonlocal i
 
-    body = text_0[text_0.find(']={')+2 : len(text_0)]
+        text_0 = text[i]
 
-    spell_dict = json.loads(body)
+        body = text_0[text_0.find(']={')+2 : len(text_0)]
 
-    spell_id = text_0[text_0.find('_[')+2 : text_0.find(']={')]
-    spell_dict.update({'spell_id':spell_id})
+        spell_dict = json.loads(body)
 
-    print(f"{key} [{spell_dict['name_ruru']}] под id [{spell_dict['spell_id']}] успешно сохранён в файл.")
+        if spell_dict['name_ruru'].lower() != objectName.lower():
 
-    x_list.append(spell_dict)
+            if i < len(text)-1:
+
+                i += 1
+                name_match_check(text)
+                return
+
+        return text_0, spell_dict
+
+    name_match_check(text)
+    text_0, spell_dict = name_match_check(text)
+
+    if text_0 != None and spell_dict != None:
+
+        spell_id = text_0[text_0.find('_[')+2 : text_0.find(']={')]
+        spell_dict.update({'spell_id':spell_id})
+
+        print(f"{key} [{spell_dict['name_ruru']}] под id [{spell_dict['spell_id']}] успешно сохранён в файл.")
+
+        x_list.append(spell_dict)
 
 def get_html(objectName, key):
     # https://base.opiums.eu/?search=Исповедь#abilities
@@ -110,7 +98,7 @@ def get_html(objectName, key):
         print(f'!WARNING! {key} [{objectName}] не удалось найти в базе данных. !WARNING!')
         return
 
-    make_dict_with_id(script_text, key)
+    make_dict_with_id(script_text, key, objectName)
 
 def start_program():
 
@@ -123,8 +111,10 @@ def start_program():
 
     print('\n>>>>>>>>>>>>>>>>>>>> Операция началась <<<<<<<<<<<<<<<<<<<<')
 
-    # object_list = ['Исповедь', 'Взрыв разума', 'Ментальный крик', 'Подавление боли', 'Заклинание для теста без имени', 'Придание сил', 'Левитация', 'Исчадие Тьмы']
-    # object_list = ['Гримуар разгневанного гладиатора', 'Перстень постепенной регенерации', 'Плащ горящего заката', 'Вещь для теста без имени', 'Амулет костяного часового', 'Подвеска истинной крови']
+    # object_list = ['Исповедь', 'Взрыв разума', 'Ментальный крик', 'Подавление боли',
+    # 'Заклинание для теста без имени', 'Придание сил', 'Левитация', 'Исчадие Тьмы']
+    # object_list = ['Гримуар разгневанного гладиатора', 'Перстень постепенной регенерации',
+    # 'Плащ горящего заката', 'Вещь для теста без имени', 'Амулет костяного часового', 'Подвеска истинной крови']
 
     file = open(f'{cat}.txt', 'r', encoding='utf-8')
     object_list = file.readlines()
