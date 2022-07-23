@@ -33,6 +33,7 @@ def make_xlsx_file(spell_dict, key):
 x_list = []
 
 def make_dict_with_id(script_text, key, objectName):
+
     item_key = 'var _ = g_items'
     class_key = 'var _ = g_classes'
     spell_key = 'var _ = g_spells'
@@ -44,8 +45,10 @@ def make_dict_with_id(script_text, key, objectName):
 
     text = text.split(';')
 
-    text.remove(text[0])
-    text.remove(text[-1])
+    while '' in text:
+        text.remove('')
+    while '\n       ' in text:
+        text.remove('\n       ')
 
     i = 0
     def name_match_check(text):
@@ -62,22 +65,22 @@ def make_dict_with_id(script_text, key, objectName):
             if i < len(text)-1:
 
                 i += 1
-                name_match_check(text)
+                return name_match_check(text)
+            else:
+                print(f"{key} [{spell_dict['name_ruru']}] Что-то пошло не так.")
                 return
 
         return text_0, spell_dict
 
-    name_match_check(text)
     text_0, spell_dict = name_match_check(text)
 
-    if text_0 != None and spell_dict != None:
+    spell_id = text_0[text_0.find('_[')+2 : text_0.find(']={')]
 
-        spell_id = text_0[text_0.find('_[')+2 : text_0.find(']={')]
-        spell_dict.update({'spell_id':spell_id})
+    spell_dict.update({'spell_id':spell_id})
 
-        print(f"{key} [{spell_dict['name_ruru']}] под id [{spell_dict['spell_id']}] успешно сохранён в файл.")
+    print(f"{key} [{spell_dict['name_ruru']}] под id [{spell_dict['spell_id']}] успешно сохранён в файл.")
 
-        x_list.append(spell_dict)
+    x_list.append(spell_dict)
 
 def get_html(objectName, key):
     # https://base.opiums.eu/?search=Исповедь#abilities
@@ -115,11 +118,14 @@ def start_program():
     # 'Заклинание для теста без имени', 'Придание сил', 'Левитация', 'Исчадие Тьмы']
     # object_list = ['Гримуар разгневанного гладиатора', 'Перстень постепенной регенерации',
     # 'Плащ горящего заката', 'Вещь для теста без имени', 'Амулет костяного часового', 'Подвеска истинной крови']
+    # object_list = ['Костечешуйный луциан']
 
     file = open(f'{cat}.txt', 'r', encoding='utf-8')
     object_list = file.readlines()
 
     for objectName in object_list:
+        if '\n' in objectName:
+            objectName = objectName[0:-1]
         get_html(objectName, cat)
 
     file.close()
